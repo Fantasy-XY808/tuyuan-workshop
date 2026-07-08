@@ -41,7 +41,7 @@ export function UploadZone({ onFiles }: UploadZoneProps) {
           "relative border-2 rounded-xl p-12 text-center cursor-pointer",
           "transition-all duration-300 outline-none group overflow-hidden",
           dragging
-            ? "border-primary bg-primary/5 scale-[1.02]"
+            ? "border-primary bg-primary/5 scale-[1.02] animate-pulse-glow"
             : "border-dashed border-input hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm",
         ].join(" ")}
         onDrop={handleDrop}

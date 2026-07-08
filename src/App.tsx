@@ -7,6 +7,7 @@
 import { useState } from "react"
 import { Header } from "@/components/header"
 import { AnimatedGrid } from "@/components/animated-grid"
+import { ParticleBg } from "@/components/particle-bg"
 import { Toaster } from "sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { useTheme } from "@/hooks/use-theme"
@@ -32,6 +33,7 @@ export default function App() {
     <TooltipProvider>
       <div className="min-h-screen bg-background text-foreground flex flex-col relative">
         <AnimatedGrid />
+        <ParticleBg />
         <Header dark={dark} onToggleTheme={toggle} onHome={handleHome} />
         <main className="flex-1 flex flex-col min-h-0">
           {page === "home" ? (

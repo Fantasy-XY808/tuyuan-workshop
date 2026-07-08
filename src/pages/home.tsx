@@ -26,7 +26,7 @@ export function HomePage({ onFiles }: HomePageProps) {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer" style={{ backgroundSize: "200% 100%" }} />
         </div>
         <div>
-          <div className="size-24 mx-auto mb-5 text-primary animate-scale-in">
+          <div className="size-24 mx-auto mb-5 text-primary animate-float">
             <Logo className="size-24" />
           </div>
           <h1
@@ -55,7 +55,9 @@ export function HomePage({ onFiles }: HomePageProps) {
         {features.map((f, i) => (
           <TiltCard key={f.title} className="animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="text-center space-y-1.5 p-4">
-              <f.icon className="h-5 w-5 mx-auto text-primary" />
+              <div className="h-8 w-8 mx-auto rounded-lg bg-primary/10 flex items-center justify-center mb-2 transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-110 group-hover:shadow-sm">
+                <f.icon className="h-4 w-4 text-primary" />
+              </div>
               <p className="text-sm font-medium">{f.title}</p>
               <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>

@@ -1,13 +1,38 @@
+/**
+ * @file EXIF 标签定义与中文映射
+ * 按功能分类管理所有支持的 EXIF 标签，提供标签元数据查询。
+ *
+ * 标签来源：
+ * - Exif 2.32 标准（ImageIFD + ExifIFD）
+ * - GPS IFD
+ * - DNG 1.4 扩展
+ *
+ * 共 8 个分类，约 200+ 标签，每标签包含：
+ * - key: 内部标签名（与 @substrate-system/exif 对齐）
+ * - label: 中文显示名称
+ * - type: 控件类型（text / number / date / select）
+ * - options: select 类型的可选值列表
+ */
+
+/** 标签分类 */
 export interface TagCategory {
+  /** 唯一标识 */
   key: string
+  /** 分类显示名称 */
   label: string
+  /** 该分类下的标签列表 */
   fields: TagDef[]
 }
 
+/** 单个标签定义 */
 export interface TagDef {
+  /** 内部标签名（与 exif 库对齐） */
   key: string
+  /** 中文显示名称 */
   label: string
+  /** 编辑控件类型 */
   type: "text" | "number" | "date" | "select"
+  /** select 类型的选项列表（格式: "值-显示名"） */
   options?: string[]
 }
 
@@ -351,6 +376,7 @@ const technicalInfo: TagCategory = {
   ],
 }
 
+/** 所有标签分类（共 8 类） */
 export const tagCategories: TagCategory[] = [
   basicInfo,
   shootingParams,
@@ -362,6 +388,7 @@ export const tagCategories: TagCategory[] = [
   technicalInfo,
 ]
 
+/** 根据标签名查询标签定义 */
 export function getTagDef(key: string): TagDef | undefined {
   for (const cat of tagCategories) {
     for (const field of cat.fields) {

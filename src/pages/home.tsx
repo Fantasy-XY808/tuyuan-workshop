@@ -1,3 +1,9 @@
+/**
+ * @file 首页
+ * 展示品牌 Logo、功能简介和拖拽上传区域。
+ * 用户上传图片后自动跳转到编辑器页面。
+ */
+
 import { UploadZone } from "@/components/upload-zone"
 import { Logo } from "@/components/logo"
 import { Shield, Image, Download, Zap } from "lucide-react"
@@ -19,7 +25,7 @@ export function HomePage({ onFiles }: HomePageProps) {
       <div className="text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs text-muted-foreground bg-muted/50">
           <Shield className="h-3 w-3" />
-          本地处理 &middot; 不上传服务器
+          本地处理 · 不上传服务器
         </div>
         <div>
           <div className="size-24 mx-auto mb-5 text-primary">

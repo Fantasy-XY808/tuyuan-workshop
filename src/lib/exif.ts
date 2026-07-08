@@ -1,8 +1,21 @@
+/**
+ * @file EXIF 元数据核心操作
+ * 提供跨格式的 EXIF 读取、写入、擦除功能。
+ *
+ * 架构说明：
+ * - JPEG：使用 @substrate-system/exif 在浏览器中直接操作 APP1 段
+ * - PNG/WebP：使用 @substrate-system/exif 读取，stripExif 擦除
+ * - HEIC/AVIF：使用 @uswriting/exiftool (WebAssembly) 读写擦除
+ */
+
 import { ImageIFD, ExifIFD, GPSIFD } from "@substrate-system/exif"
 import type { Exif, ExifValue } from "@substrate-system/exif"
 import { detectFormat, canWrite, canStrip, formatLabel, type ImageFormat } from "./format"
 
-// ── Bidirectional tag name ↔ (IFD, tag ID) mapping ──
+/* ------------------------------------------------------------------ */
+/*  标签名 ↔ IFD+ID 双向映射                                           */
+/*  将 "ISOSpeedRatings" 这样的标签名映射为 { ifd: "Exif", id: 0x8827 } */
+/* ------------------------------------------------------------------ */
 
 type TagEntry = { ifd: string; id: number }
 const NAME_TO_TAG: Record<string, TagEntry> = {}
@@ -31,8 +44,11 @@ function buildTagMaps() {
 }
 buildTagMaps()
 
-// ── Value formatting ──
+/* ------------------------------------------------------------------ */
+/*  值格式化处理                                                        */
+/* ------------------------------------------------------------------ */
 
+/** 将 GPS DMS 数组（度分秒）转换为十进制数 */
 function gpsDmsToDecimal(dms: [number, number][]): number {
   const d = dms[0]?.[0] ?? 0
   const m = dms[1]?.[0] ?? 0
@@ -40,25 +56,26 @@ function gpsDmsToDecimal(dms: [number, number][]): number {
   return d + m / 60 + s / 3600
 }
 
+/** 将 substrate 库返回的原始 ExifValue 格式化为可读字符串 */
 function formatValueForDisplay(val: ExifValue): string {
   if (typeof val === "string") return val
   if (typeof val === "number") return String(val)
   if (!Array.isArray(val)) return ""
-  // [number, number][] — GPS DMS
   if (val.length > 0 && Array.isArray(val[0])) {
     return String(gpsDmsToDecimal(val as [number, number][]))
   }
-  // [number, number] — rational
   if (val.length === 2 && typeof val[0] === "number") {
     const [num, den] = val as [number, number]
     return den === 0 ? "0" : String(num / den)
   }
-  // number[]
   return (val as number[]).join(", ")
 }
 
-// ── Text tag names (should stay as strings, not parsed as numbers) ──
+/* ------------------------------------------------------------------ */
+/*  写入时的值猜测                                                      */
+/* ------------------------------------------------------------------ */
 
+/** 应保持为文本（而非转为数字）的标签名集合 */
 const TEXT_TAGS = new Set([
   "ImageDescription", "Make", "Model", "Software", "Artist", "Copyright",
   "UserComment", "XPAuthor", "XPSubject", "XPKeywords",
@@ -74,6 +91,7 @@ function isTextTag(name: string): boolean {
   return TEXT_TAGS.has(name)
 }
 
+/** 根据标签名和字符串值猜测合适的 ExifValue 类型 */
 function guessExifValue(name: string, str: string): ExifValue {
   if (!str) return ""
   if (isTextTag(name)) return str
@@ -81,8 +99,14 @@ function guessExifValue(name: string, str: string): ExifValue {
   return isNaN(num) ? str : num
 }
 
-// ── Substrate (JPEG/PNG/WebP) read ──
+/* ------------------------------------------------------------------ */
+/*  Substrate 读取（JPEG / PNG / WebP）                                */
+/* ------------------------------------------------------------------ */
 
+/**
+ * 使用 @substrate-system/exif 读取图片 EXIF。
+ * 将 IFD 中的数字 ID 通过 IFDID_TO_NAME 映射回标签名。
+ */
 async function readSubstrate(file: File): Promise<ExifValues> {
   const mod = await import("@substrate-system/exif/browser")
   const exif: Exif = await mod.loadFromBlob(file)
@@ -99,13 +123,16 @@ async function readSubstrate(file: File): Promise<ExifValues> {
   return flat
 }
 
-// ── ExifTool read (HEIC/AVIF fallback) ──
+/* ------------------------------------------------------------------ */
+/*  ExifTool 读取（HEIC / AVIF 兜底）                                   */
+/* ------------------------------------------------------------------ */
 
 type ExifToolModule = typeof import("@uswriting/exiftool")
 
 let _exiftool: ExifToolModule | null = null
 let _exiftoolLoading: Promise<ExifToolModule> | null = null
 
+/** 懒加载 ExifTool WebAssembly 模块（单例） */
 async function getExifTool(): Promise<ExifToolModule> {
   if (_exiftool) return _exiftool
   if (!_exiftoolLoading) {
@@ -117,8 +144,10 @@ async function getExifTool(): Promise<ExifToolModule> {
   return _exiftoolLoading
 }
 
+/** 只保留 EXIF/GPS/IPTC 组，跳过其他元数据（如 ICC Profile） */
 const KEEP_GROUPS = new Set(["EXIF", "GPS", "IPTC", ""])
 
+/** 使用 ExifTool CLI（WASM）解析文件元数据 */
 async function readExifTool(file: File): Promise<ExifValues> {
   const et = await getExifTool()
   const result = await et.parseMetadata(file, {
@@ -141,18 +170,34 @@ async function readExifTool(file: File): Promise<ExifValues> {
   return flat
 }
 
-// ── Public types ──
+/* ------------------------------------------------------------------ */
+/*  公共类型                                                           */
+/* ------------------------------------------------------------------ */
 
+/** 扁平化的 EXIF 键值对，所有值均序列化为字符串 */
 export type ExifValues = Record<string, string>
 
+/** EXIF 读取结果 */
 export interface ReadResult {
+  /** 检测到的图片格式 */
   format: ImageFormat
+  /** 格式化后的 EXIF 数据 */
   exif: ExifValues
+  /** 原始 EXIF 数据（当前与 exif 相同） */
   raw: ExifValues
 }
 
-// ── Public read API ──
+/* ------------------------------------------------------------------ */
+/*  公共读取 API                                                       */
+/* ------------------------------------------------------------------ */
 
+/**
+ * 读取图片 EXIF 元数据。
+ * 根据格式自动选择读取引擎：
+ * - JPEG/PNG/WebP → @substrate-system/exif（浏览器原生）
+ * - HEIC/AVIF → ExifTool（WebAssembly）
+ * 失败时自动降级到 ExifTool 兜底。
+ */
 export async function readExif(file: File): Promise<ReadResult> {
   const format = detectFormat(file)
   try {
@@ -173,14 +218,22 @@ export async function readExif(file: File): Promise<ReadResult> {
   }
 }
 
-// ── JPEG write via substrate ──
+/* ------------------------------------------------------------------ */
+/*  Substrate 写入（仅 JPEG）                                          */
+/* ------------------------------------------------------------------ */
 
+/** 使用 @substrate-system/exif 写入 JPEG 的 EXIF APP1 段 */
 async function writeJpegExif(file: File, values: ExifValues): Promise<Blob> {
   const { load, dump, insert } = await import("@substrate-system/exif")
   const uint8 = new Uint8Array(await file.arrayBuffer())
   const exif = load(uint8)
 
-  const DUPLICATE_TAGS = new Set(["ExposureTime", "FlashEnergy", "SpatialFrequencyResponse", "FocalPlaneXResolution", "FocalPlaneYResolution", "FocalPlaneResolutionUnit", "ExposureIndex", "SensingMethod", "CFAPattern"])
+  /** 某些标签同时存在于 ExifIFD 和 ImageIFD，需同步写入 */
+  const DUPLICATE_TAGS = new Set([
+    "ExposureTime", "FlashEnergy", "SpatialFrequencyResponse",
+    "FocalPlaneXResolution", "FocalPlaneYResolution",
+    "FocalPlaneResolutionUnit", "ExposureIndex", "SensingMethod", "CFAPattern",
+  ])
 
   for (const [name, strVal] of Object.entries(values)) {
     if (!strVal) continue
@@ -213,8 +266,15 @@ async function writeJpegExif(file: File, values: ExifValues): Promise<Blob> {
   return new Blob([insert(dump(exif), uint8).buffer as ArrayBuffer], { type: file.type })
 }
 
-// ── ExifTool tag name mapping ──
+/* ------------------------------------------------------------------ */
+/*  ExifTool 标签名映射                                                */
+/* ------------------------------------------------------------------ */
 
+/**
+ * 内部标签名 → ExifTool CLI 标签名映射。
+ * 因 @substrate-system/exif 与 ExifTool 对同一标签的命名不同，
+ * 写入 HEIC/AVIF 时需转换。
+ */
 const EXIFTOOL_TAG_MAP: Record<string, string> = {
   ISOSpeedRatings: "ISO",
   ISOSpeed: "ISO",
@@ -242,14 +302,18 @@ const EXIFTOOL_TAG_MAP: Record<string, string> = {
   SubjectDistanceRange: "EXIF:SubjectDistanceRange",
 }
 
+/** 将内部标签名转换为 ExifTool 兼容的标签名 */
 function toExifToolName(name: string): string {
   if (EXIFTOOL_TAG_MAP[name]) return EXIFTOOL_TAG_MAP[name]
   if (name.startsWith("GPS")) return `GPS:${name}`
   return `EXIF:${name}`
 }
 
-// ── ExifTool write (HEIC/AVIF + fallback) ──
+/* ------------------------------------------------------------------ */
+/*  ExifTool 写入（HEIC / AVIF）                                       */
+/* ------------------------------------------------------------------ */
 
+/** 使用 ExifTool（WASM）写入元数据 */
 async function writeExifTool(file: File, values: ExifValues): Promise<Blob> {
   const et = await getExifTool()
   const tags: Record<string, string> = {}
@@ -264,8 +328,15 @@ async function writeExifTool(file: File, values: ExifValues): Promise<Blob> {
   return new Blob([result.data], { type: file.type })
 }
 
-// ── Public write API ──
+/* ------------------------------------------------------------------ */
+/*  公共写入 / 擦除 API                                                */
+/* ------------------------------------------------------------------ */
 
+/**
+ * 写入 EXIF 元数据到图片文件。
+ * - JPEG → 浏览器原生写入 APP1 段（保留 APP2 ICC Profile）
+ * - HEIC/AVIF → ExifTool（WASM）
+ */
 export async function writeExif(file: File, values: ExifValues): Promise<Blob> {
   const format = detectFormat(file)
   if (!canWrite(format)) throw new Error(`${formatLabel(format)} 不支持写入元数据`)
@@ -273,8 +344,11 @@ export async function writeExif(file: File, values: ExifValues): Promise<Blob> {
   return writeExifTool(file, values)
 }
 
-// ── Complete EXIF removal ──
-
+/**
+ * 擦除图片中的所有 EXIF 元数据。
+ * - JPEG/PNG/WebP → 调用 stripExif 移除 APP1 段（保留 APP2 ICC Profile）
+ * - HEIC/AVIF → ExifTool 只删除 EXIF/GPS/XMP 组
+ */
 export async function removeExif(file: File): Promise<Blob> {
   const format = detectFormat(file)
   if (!canStrip(format)) throw new Error(`${formatLabel(format)} 不支持擦除元数据`)
@@ -292,8 +366,10 @@ export async function removeExif(file: File): Promise<Blob> {
   return new Blob([result.data], { type: file.type })
 }
 
-// ── Selective EXIF removal (always uses ExifTool for cross-format support) ──
-
+/**
+ * 按字段列表选择性擦除 EXIF。
+ * 始终使用 ExifTool（WASM）以获得跨格式一致的行为。
+ */
 export async function removeExifSelective(
   file: File,
   fields: string[]
@@ -307,6 +383,7 @@ export async function removeExifSelective(
   return new Blob([result.data], { type: file.type })
 }
 
+/** 检查 ExifTool WASM 模块是否已加载 */
 export function isExifToolLoaded(): boolean {
   return _exiftool !== null
 }

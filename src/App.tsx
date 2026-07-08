@@ -1,3 +1,9 @@
+/**
+ * @file 根组件
+ * 管理页面路由（首页 ↔ 编辑器），使用状态而非 URL 路由。
+ * 提供全局 Header、Theme、Toast 基础设施。
+ */
+
 import { useState } from "react"
 import { Header } from "@/components/header"
 import { Toaster } from "sonner"

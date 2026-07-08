@@ -1,3 +1,15 @@
+/**
+ * @file 编辑器页面
+ * 核心工作区，提供三栏布局：
+ * - 左侧：文件列表 + 添加更多
+ * - 右侧：预览 + EXIF 编辑 / 批量 / 隐私面板（标签切换）
+ *
+ * 功能：
+ * - 文件选择与移除
+ * - 左滑手势返回首页
+ * - 未保存修改检测与弹窗提醒
+ */
+
 import { useState, useRef, useEffect, useCallback } from "react"
 import { ArrowLeft, Images, SlidersHorizontal, Shield, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,28 +34,22 @@ export function EditorPage({ onBack, uploadFiles }: EditorPageProps) {
   const [mode, setMode] = useState<"editor" | "batch" | "privacy">("editor")
   const consumed = useRef(false)
 
+  /* ---- 未保存检测 ---- */
   const [dirtyFiles, setDirtyFiles] = useState<Map<string, string>>(new Map())
   const [showBackWarn, setShowBackWarn] = useState(false)
 
   const handleDirtyChange = useCallback((fileId: string, fileName: string, isDirty: boolean) => {
     setDirtyFiles((prev) => {
       const next = new Map(prev)
-      if (isDirty) {
-        next.set(fileId, fileName)
-      } else {
-        next.delete(fileId)
-      }
+      if (isDirty) next.set(fileId, fileName)
+      else next.delete(fileId)
       return next
     })
   }, [])
 
   const handleBack = useCallback(() => {
-    if (dirtyFiles.size > 0) {
-      setShowBackWarn(true)
-    } else {
-      clearAll()
-      onBack()
-    }
+    if (dirtyFiles.size > 0) setShowBackWarn(true)
+    else { clearAll(); onBack() }
   }, [dirtyFiles, clearAll, onBack])
 
   const handleForceBack = useCallback(() => {
@@ -54,14 +60,13 @@ export function EditorPage({ onBack, uploadFiles }: EditorPageProps) {
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (dirtyFiles.size > 0) {
-        e.preventDefault()
-      }
+      if (dirtyFiles.size > 0) e.preventDefault()
     }
     window.addEventListener("beforeunload", handler)
     return () => window.removeEventListener("beforeunload", handler)
   }, [dirtyFiles])
 
+  /* ---- 左滑手势 ---- */
   const touchStartX = useRef(0)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -71,24 +76,30 @@ export function EditorPage({ onBack, uploadFiles }: EditorPageProps) {
     if (dx > 80) handleBack()
   }, [handleBack])
 
+  /* ---- 处理由首页传入的文件 ---- */
   if (uploadFiles && !consumed.current) {
     consumed.current = true
     addFiles(uploadFiles)
   }
 
   return (
-    <div className="flex flex-col max-w-6xl mx-auto w-full px-2 sm:px-4 py-4 gap-4 flex-1 min-h-0 animate-fade-in" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div
+      className="flex flex-col max-w-6xl mx-auto w-full px-2 sm:px-4 py-4 gap-4 flex-1 min-h-0 animate-fade-in"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* 顶栏 */}
       <div className="flex items-center justify-between shrink-0">
         <Button variant="ghost" size="sm" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           返回
         </Button>
         <div className="bg-muted rounded-lg p-0.5 flex items-center">
-          {[
+          {([
             { key: "editor" as const, icon: Images, label: "编辑" },
             { key: "batch" as const, icon: SlidersHorizontal, label: "批量" },
             { key: "privacy" as const, icon: Shield, label: "隐私" },
-          ].map((item) => (
+          ]).map((item) => (
             <Button
               key={item.key}
               variant={mode === item.key ? "default" : "ghost"}
@@ -103,7 +114,9 @@ export function EditorPage({ onBack, uploadFiles }: EditorPageProps) {
         </div>
       </div>
 
+      {/* 主体 */}
       <div className={`flex-1 min-h-0 grid gap-4 ${mode === "editor" ? "grid-rows-[auto_1fr] md:grid-cols-[220px_1fr] md:grid-rows-none" : "grid-cols-1"}`}>
+        {/* 左侧：文件列表 */}
         <div className="flex flex-col gap-3 min-h-0 md:max-h-full">
           <div
             className="border-2 border-dashed rounded-lg p-4 text-center text-sm text-muted-foreground cursor-pointer hover:border-primary hover:bg-muted/30 transition-all shrink-0"
@@ -128,6 +141,8 @@ export function EditorPage({ onBack, uploadFiles }: EditorPageProps) {
             />
           </div>
         </div>
+
+        {/* 右侧：内容区 */}
         <div className="bg-card border rounded-lg p-4 overflow-y-auto min-h-0 scrollbar-thin animate-slide-up">
           {mode === "editor" && (
             <ErrorBoundary>
@@ -160,6 +175,7 @@ export function EditorPage({ onBack, uploadFiles }: EditorPageProps) {
         </div>
       </div>
 
+      {/* 未保存弹窗 */}
       <AlertDialog open={showBackWarn} onOpenChange={setShowBackWarn}>
         <AlertDialogContent>
           <AlertDialogHeader>

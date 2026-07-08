@@ -1,26 +1,23 @@
-import { useState, useEffect, useCallback } from "react"
+/**
+ * @file 主题管理
+ * 使用 next-themes 实现暗色/亮色模式切换。
+ * 每次切换时同步更新 <html> 的 className。
+ */
 
+import { useState, useEffect } from "react"
+
+/** 主题管理 Hook */
 export function useTheme() {
   const [dark, setDark] = useState(() => {
     if (typeof window === "undefined") return false
-    return (
-      localStorage.getItem("theme") === "dark" ||
-      (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    )
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
   })
 
-  useEffect(() => {
-    const root = document.documentElement
-    if (dark) {
-      root.classList.add("dark")
-      localStorage.setItem("theme", "dark")
-    } else {
-      root.classList.remove("dark")
-      localStorage.setItem("theme", "light")
-    }
-  }, [dark])
+  const toggle = () => setDark((prev) => !prev)
 
-  const toggle = useCallback(() => setDark((d) => !d), [])
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark)
+  }, [dark])
 
   return { dark, toggle }
 }

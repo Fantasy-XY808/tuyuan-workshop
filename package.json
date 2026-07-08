@@ -1,8 +1,27 @@
 {
   "name": "tuyuan-workshop",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "description": "Browser-based EXIF metadata viewer, editor, and sanitizer. Supports JPEG/PNG/WebP/HEIC/AVIF, 100% client-side processing.",
+  "keywords": [
+    "exif",
+    "metadata",
+    "image-editor",
+    "privacy",
+    "wasm",
+    "exiftool",
+    "vite",
+    "react"
+  ],
+  "license": "MIT",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "bugs": "",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

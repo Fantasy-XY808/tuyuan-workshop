@@ -12,15 +12,15 @@
     "wasm",
     "exiftool"
   ],
-  "license": "MIT",
-  "author": "",
+  "license": "AGPL-3.0",
+  "author": "Fantasy-XY808",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/<username>/tuyuan-workshop.git"
+    "url": "git+https://github.com/Fantasy-XY808/tuyuan-workshop.git"
   },
-  "homepage": "https://<username>.github.io/tuyuan-workshop/",
+  "homepage": "https://Fantasy-XY808.github.io/tuyuan-workshop/",
   "bugs": {
-    "url": "https://github.com/<username>/tuyuan-workshop/issues"
+    "url": "https://github.com/Fantasy-XY808/tuyuan-workshop/issues"
   },
   "scripts": {
     "dev": "vite",

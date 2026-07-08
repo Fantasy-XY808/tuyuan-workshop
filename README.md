@@ -21,7 +21,7 @@
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT" />
+  <img src="https://img.shields.io/badge/license-AGPLv3-green" alt="AGPL-3.0" />
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="PRs" />
 </p>
 
@@ -71,7 +71,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/<username>/tuyuan-workshop.git
+git clone https://github.com/Fantasy-XY808/tuyuan-workshop.git
 cd tuyuan-workshop
 
 # 安装依赖
@@ -213,7 +213,7 @@ tuyuan-workshop/
 1. 安装依赖
 2. TypeScript 类型检查 + Vite 构建
 3. 上传 `dist/` 目录到 GitHub Pages
-4. 发布到 `https://<username>.github.io/tuyuan-workshop/`
+4. 发布到 `https://Fantasy-XY808.github.io/tuyuan-workshop/`
 
 ### 手动部署
 
@@ -245,4 +245,4 @@ A: 当前版本专注于图片格式，不支持视频 EXIF 编辑。
 
 ## 📄 许可
 
-[MIT License](./LICENSE) © 2025
+[GNU AGPL-3.0](./LICENSE) © 2025 Fantasy-XY808

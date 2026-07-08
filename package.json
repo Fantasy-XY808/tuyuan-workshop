@@ -10,18 +10,18 @@
     "image-editor",
     "privacy",
     "wasm",
-    "exiftool",
-    "vite",
-    "react"
+    "exiftool"
   ],
   "license": "MIT",
   "author": "",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/<username>/tuyuan-workshop.git"
   },
-  "homepage": "",
-  "bugs": "",
+  "homepage": "https://<username>.github.io/tuyuan-workshop/",
+  "bugs": {
+    "url": "https://github.com/<username>/tuyuan-workshop/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

@@ -1,0 +1,1 @@
+var e=async()=>new Uint8Array;export{e as readFile};

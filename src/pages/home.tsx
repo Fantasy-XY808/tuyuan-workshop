@@ -6,6 +6,7 @@
 
 import { UploadZone } from "@/components/upload-zone"
 import { Logo } from "@/components/logo"
+import { DemoGallery } from "@/components/demo-gallery"
 import { Shield, Image, Download, Zap } from "lucide-react"
 
 interface HomePageProps {
@@ -42,6 +43,8 @@ export function HomePage({ onFiles }: HomePageProps) {
           </p>
         </div>
       </div>
+
+      <DemoGallery />
 
       <UploadZone onFiles={onFiles} />
 
